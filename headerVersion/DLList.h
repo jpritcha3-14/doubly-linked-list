@@ -6,6 +6,7 @@
 class DLList {
 
     Node* head;
+    Node** pphead;
 
     public:
         DLList(int num);
@@ -13,9 +14,10 @@ class DLList {
         static Node* buildlist(int num); 
         static void deletelist(Node *l);
         void printVal(int val); 
-        void addVal(int val);
+        void appendVal(int val);
         void deleteVal(int val);
-        void printlist();
+        void insertVal(int val, int idx);
+        void printList();
 };
 
 #endif
