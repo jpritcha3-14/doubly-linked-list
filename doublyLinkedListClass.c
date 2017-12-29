@@ -10,12 +10,14 @@ typedef struct Node {
 // Class definition
 typedef struct DLList {
     struct Node *head;
-    void (**vtable)(struct Node *node, int val);
+    struct Node **pphead;
+    void (**vtable)(struct Node **node, int val);
 } DLList;
 
 // Method Declariations
-void print_Val(struct Node *head, int val) {
-    struct Node *l = head;
+void print_Val(struct Node **pphead, int val) {
+    struct Node *l = *pphead;
+    //struct Node *l = head;
     while (l != NULL) {
         if (l->val == val) {
             printf("%d\n", l->val); 
@@ -23,12 +25,12 @@ void print_Val(struct Node *head, int val) {
         }
         l = l->flink;
     }
-    printf("no %d found\n", val);
+    printf("No %d Found\n", val);
 }
 
-void add_Val(struct Node *head, int val) {
-    //Node *c = *pphead;
-    struct Node *c = head;
+void add_Val(struct Node **pphead, int val) {
+    struct Node *c = *pphead;
+    //struct Node *c = head;
     while (c->flink != NULL) {
         c = c->flink;
     }
@@ -38,19 +40,30 @@ void add_Val(struct Node *head, int val) {
     c->flink->flink = NULL;
 }
 
-void delete_Val(struct Node *head, int val) {
-    //Node *c = *pphead;
-    Node *c = head;
-    while (c != NULL && c->val != val) {
+void delete_Val(struct Node **pphead, int val) {
+    struct Node *c = *pphead;
+    //Node *c = head;
+    while (c->val != val) {
         c = c->flink;
+        if (c == NULL) {
+            printf("%d is not in DLL!\n", c->val); 
+            return;
+        }
     }
-    c->flink->blink = c->blink;
-    c->blink->flink = c->flink;
+    if (c->flink != NULL) {
+        c->flink->blink = c->blink; 
+    }
+    if (c->blink != NULL) {
+        c->blink->flink = c->flink; 
+    } else {
+        *pphead = c->flink;
+    }
     free(c);
 }
 
-void print_List(struct Node *head) {
-    Node *cur = head;
+void print_List(struct Node **pphead) {
+    Node *cur = *pphead;
+    //Node *cur = head;
     printf("NULL <- ");
     while (cur != NULL) {
         if (cur->flink == NULL) {
@@ -63,11 +76,12 @@ void print_List(struct Node *head) {
     }
 }
 
-void delete_List(struct Node *l) {
+void delete_List(struct Node **pphead) {
     Node* prev = NULL;
-    while (l != NULL) {
-        prev = l;
-        l = l->flink;
+    Node* cur = *pphead;
+    while (cur != NULL) {
+        prev = cur;
+        cur = cur->flink;
         free(prev);
     }
 }
@@ -78,19 +92,19 @@ void (*DLLVTable[])() = {&print_Val, &add_Val, &delete_Val, &print_List, &delete
 // Wrapper functions for calling object methods from their vtable
 enum {call_print, call_add, call_delete, call_printList, call_deleteList};
 void printVal(DLList* obj, int val) {
-    obj->vtable[call_print](obj->head, val);
+    obj->vtable[call_print](obj->pphead, val);
 }
 void addVal(DLList* obj, int val) {
-    obj->vtable[call_add](obj->head, val);
+    obj->vtable[call_add](obj->pphead, val);
 }
 void deleteVal(DLList* obj, int val) {
-    obj->vtable[call_delete](obj->head, val);
+    obj->vtable[call_delete](obj->pphead, val);
 }
 void printList(DLList* obj, int val) {
-    obj->vtable[call_printList](obj->head, val);
+    obj->vtable[call_printList](obj->pphead, val);
 }
 void deleteList(DLList* obj, int val) {
-    obj->vtable[call_deleteList](obj->head, val);
+    obj->vtable[call_deleteList](obj->pphead, val);
 }
 
 Node* buildList(int num) {
@@ -105,7 +119,7 @@ Node* buildList(int num) {
          curptr->blink = prevptr;
          if (i==num) {
              curptr->flink = NULL;
-             free(nextptr); // Does this work?
+             free(nextptr);
         } else {
              prevptr = curptr;
              curptr = nextptr;
@@ -119,16 +133,21 @@ DLList* newDLL(int num) {
     DLList* obj = (DLList*)malloc(sizeof(DLList));
     obj->vtable = DLLVTable;
     obj->head = buildList(num); 
+    obj->pphead = &(obj->head);
     return obj;
 }
 
 int main() {
     DLList* ll = newDLL(4);
+    printList(ll, 0); //1
     printVal(ll, 3);
     addVal(ll, 5);
+    printList(ll, 0); //2
     deleteVal(ll, 2);
-    printList(ll, 0);
+    printList(ll, 0); //3
+    deleteVal(ll, 1);
+    printList(ll, 0); //4
     deleteList(ll, 0);
+    free(ll);
     return 0;
 }
- 
